@@ -3,44 +3,77 @@ from google import genai
 from PIL import Image
 from gtts import gTTS
 import io
+import time
 
-# Подключаем ключ (мы добавим его в настройки позже)
-API_KEY = st.secrets["GEMINI_KEY"]
-client = genai.Client(api_key=API_KEY)
+# --- НАСТРОЙКИ СТРАНИЦЫ ---
+st.set_page_config(page_title="Terra AI", page_icon="🌍", layout="centered")
 
-st.set_page_config(page_title="Terra AI", page_icon="🌍")
+# --- ПОДКЛЮЧЕНИЕ К ИИ ---
+# Ключ берется из Secrets (настройки Streamlit Cloud)
+try:
+    API_KEY = st.secrets["GEMINI_KEY"]
+    client = genai.Client(api_key=API_KEY)
+except Exception:
+    st.error("Ошибка: Ключ GEMINI_KEY не найден в Secrets!")
+    st.stop()
 
-# Описание, которое мы выбрали
+# --- ИНТЕРФЕЙС САЙТА ---
 st.title("🌍 Terra AI")
-st.markdown("### Твой персональный ИИ с компьютерным зрением")
+st.markdown("### Твой персональный ИИ-ассистент")
 
-with st.expander("Что такое Terra? Узнать больше"):
-    st.write("Terra — это ИИ нового поколения. Она видит тебя, слышит твои команды и говорит на русском языке.")
+with st.sidebar:
+    st.header("О проекте")
+    st.write("Terra — это мультимодальный ИИ. Она использует камеру твоего устройства и мощь Google Gemini для общения с тобой.")
+    st.info("Бесплатная версия имеет лимиты. Если видишь ошибку — подожди 60 секунд.")
 
-# 1. Камера
-img_file = st.camera_input("Terra смотрит на тебя...")
+# 1. ПОЛУЧЕНИЕ ИЗОБРАЖЕНИЯ
+img_file = st.camera_input("Terra хочет тебя видеть")
 
-# 2. Поле для команды
-command = st.text_input("Что мне сделать?", placeholder="Например: Опиши мой стиль и нарисуй меня в будущем")
+# 2. ВВОД КОМАНДЫ
+command = st.text_input("Что мне сделать?", placeholder="Например: Опиши мой стиль и дай совет на день")
 
-if st.button("ЗАПУСК"):
+# 3. ЛОГИКА РАБОТЫ
+if st.button("ЗАПУСТИТЬ ТЕРРУ"):
     if img_file and command:
-        image = Image.open(img_file)
-        
-        # Terra думает
-        with st.spinner("Terra анализирует..."):
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=[f"Ты — ИИ по имени Terra. Отвечай только на русском. Запрос пользователя: {command}", image]
-            )
+        try:
+            image = Image.open(img_file)
             
-            answer = response.text
-            st.success(answer)
+            with st.spinner("🛰️ Terra анализирует данные..."):
+                # Запрос к модели 1.5 Flash (самая стабильная для бесплатного ключа)
+                response = client.models.generate_content(
+                    model="gemini-1.5-flash",
+                    contents=[
+                        image, 
+                        f"Ты — ИИ по имени Terra. Отвечай всегда только на русском языке. Будь дружелюбной. Запрос пользователя: {command}"
+                    ]
+                )
+                
+                if response.text:
+                    answer = response.text
+                    
+                    # Вывод текста
+                    st.subheader("Ответ Terra:")
+                    st.success(answer)
 
-            # Голос (теперь работает прямо в браузере!)
-            tts = gTTS(text=answer, lang='ru')
-            audio_fp = io.BytesIO()
-            tts.write_to_fp(audio_fp)
-            st.audio(audio_fp, format='audio/mp3')
+                    # ГЕНЕРАЦИЯ ГОЛОСА (gTTS)
+                    with st.spinner("🔊 Синтез голоса..."):
+                        tts = gTTS(text=answer, lang='ru')
+                        audio_fp = io.BytesIO()
+                        tts.write_to_fp(audio_fp)
+                        st.audio(audio_fp, format='audio/mp3')
+                else:
+                    st.warning("Terra не смогла сформулировать ответ. Попробуй другой запрос.")
+
+        except Exception as e:
+            # Обработка тех самых ошибок 429 (лимиты) и других
+            if "429" in str(e):
+                st.error("⚠️ Слишком много запросов! Google временно ограничил доступ.")
+                st.info("Подожди ровно 1 минуту и нажми кнопку снова.")
+            else:
+                st.error(f"Произошла ошибка: {e}")
     else:
-        st.warning("Сделай фото и введи команду, бро!")
+        st.warning("Бро, сначала сделай фото и напиши команду!")
+
+# --- ПОДВАЛ ---
+st.divider()
+st.caption("Создано с помощью Streamlit и Google Gemini API | 2026")
