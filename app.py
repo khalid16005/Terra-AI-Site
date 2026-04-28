@@ -41,7 +41,7 @@ if st.button("ЗАПУСТИТЬ ТЕРРУ"):
             with st.spinner("🛰️ Terra анализирует данные..."):
                 # Запрос к модели 1.5 Flash (самая стабильная для бесплатного ключа)
                 response = client.models.generate_content(
-                    model="gemini-1.5-flash",
+                    model="gemini-2.0-flash",
                     contents=[
                         image, 
                         f"Ты — ИИ по имени Terra. Отвечай всегда только на русском языке. Будь дружелюбной. Запрос пользователя: {command}"
