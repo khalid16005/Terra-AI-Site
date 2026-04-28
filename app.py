@@ -30,7 +30,7 @@ if st.button("ЗАПУСК"):
         # Terra думает
         with st.spinner("Terra анализирует..."):
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-1.5-flash",
                 contents=[f"Ты — ИИ по имени Terra. Отвечай только на русском. Запрос пользователя: {command}", image]
             )
             
