@@ -40,7 +40,7 @@ if st.button("ЗАПУСК TERRA"):
                 # Используем gemini-2.0-flash (актуальная модель)
                 # Если всё равно будет 404, попробуй заменить на "gemini-1.5-flash"
                 response = client.models.generate_content(
-                    model="gemini-2.0-flash", 
+                    model="gemini-1.5-flash",
                     contents=[
                         image, 
                         f"Ты — ИИ по имени Terra. Отвечай кратко и только на русском. Запрос: {command}"
