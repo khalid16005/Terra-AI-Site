@@ -7,7 +7,7 @@ import io
 # --- 1. НАСТРОЙКИ СТРАНИЦЫ ---
 st.set_page_config(page_title="Terra AI", page_icon="🌍", layout="wide")
 
-# Кастомный стиль для красоты
+# Кастомный стиль
 st.markdown("""
     <style>
     .stButton>button { width: 100%; border-radius: 20px; height: 3em; background-color: #0078ff; color: white; }
@@ -34,7 +34,7 @@ with col1:
 
 with col2:
     st.subheader("💬 Команды")
-    command = st.text_input("Что сделать?", placeholder="Например: Расскажи анекдот по этому фото")
+    command = st.text_input("Что сделать?", placeholder="Например: Опиши, что ты видишь")
     
     if st.button("ЗАПУСТИТЬ ТЕРРУ"):
         if img_file and command:
@@ -42,7 +42,8 @@ with col2:
             
             with st.spinner("🛰️ Связь с орбитой Terra..."):
                 try:
-                    # Пытаемся использовать 1.5 Flash (она стабильнее для фри-ключа)
+                    # В новой библиотеке google-genai нужно использовать полное имя модели
+                    # Или попробовать 'gemini-2.0-flash', если 1.5 недоступна
                     response = client.models.generate_content(
                         model="gemini-1.5-flash", 
                         contents=[
@@ -64,21 +65,28 @@ with col2:
                 
                 except Exception as e:
                     error_msg = str(e)
-                    if "429" in error_msg:
-                        st.error("⚠️ Лимит запросов исчерпан. Подожди 60 секунд.")
-                        st.info("Это ограничение бесплатного ключа Google. Просто дай системе отдохнуть.")
-                    else:
-                        st.error(f"Произошла ошибка: {error_msg}")
+                    if "404" in error_msg:
+                        st.error("⚠️ Модель не найдена. Пробую альтернативный канал...")
+                        # План Б: Если 1.5-flash выдает 404, пробуем 2.0-flash
+                        try:
+                            response = client.models.generate_content(
+                                model="gemini-2.0-flash", 
+                                contents=[image, f"Ты ИИ Terra. Отвечай на русском: {command}"]
+                            )
+                            st.success(response.text)
+                        except Exception as e2:
+                            st.error(f"Ошибка системы: {e2}")
+                    elif "429" in error_msg:
+                        st.error("⚠️ Слишком много запросов. Подожди 60 секунд.")
         else:
             st.warning("Бро, нужно и фото, и текст!")
 
 # --- 4. БОКОВАЯ ПАНЕЛЬ ---
 with st.sidebar:
     st.header("Статус: Online 🛰️")
-    st.markdown("---")
-    st.write("**Совет:** Если Terra молчит, подожди минуту. Бесплатные ключи имеют лимиты на скорость запросов.")
-    if st.button("Очистить всё"):
+    st.write("Terra готова к работе.")
+    if st.button("Сброс"):
         st.rerun()
 
 st.divider()
-st.caption("Terra AI v1.5 | 2026 Stable Build")
+st.caption("Terra AI v1.6 | Stable Build 2026")
