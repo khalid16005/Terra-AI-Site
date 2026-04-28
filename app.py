@@ -5,7 +5,7 @@ from gtts import gTTS
 import io
 
 # Подключаем ключ (мы добавим его в настройки позже)
-API_KEY = st.secrets["AIzaSyAI8H3VikHmjHh3mPJHJwLURDaUXB4LUX0"]
+API_KEY = st.secrets["GEMINI_KEY"]
 client = genai.Client(api_key=API_KEY)
 
 st.set_page_config(page_title="Terra AI", page_icon="🌍")
